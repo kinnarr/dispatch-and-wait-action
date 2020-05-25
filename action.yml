@@ -1,10 +1,27 @@
-name: 'Your name here'
-description: 'Provide a description here'
-author: 'Your name or organization here'
+name: 'dispatch-and-wait'
+description: 'Creates repository dispatch event and waits for check to complete'
+author: 'Franz Höpfner'
 inputs:
-  myInput:              # change this
-    description: 'input description here'
-    default: 'default value if applicable'
+  token:
+    description: 'Repo scoped GitHub Personal Access Token'
+    required: true
+  owner:
+    description: 'Owner of GitHub repository for dispatch event'
+    required: true
+  repo:
+    description: 'GitHub repository for dispatch event'
+    required: true
+  event-type:
+    description: 'Repository dispatch event type'
+    required: true
+  client-payload:
+    description: 'JSON payload with extra information for repository dispatch event.'
+    default: '{}'
+    required: false
+  timeoutSeconds:
+    description: 'wait no longer than timeoutSeconds for check to complete'
+    default: '600'
+    required: false
 runs:
   using: 'node12'
   main: 'dist/index.js'
