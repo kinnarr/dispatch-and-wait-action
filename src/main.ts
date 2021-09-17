@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import {GitHub} from '@actions/github'
+import {getOctokit} from '@actions/github'
 import {wait} from './wait'
 import {inspect} from 'util'
 
@@ -15,13 +15,13 @@ async function run(): Promise<void> {
     }
     core.debug(`Inputs: ${inspect(inputs)}`)
 
-    const client = new GitHub(inputs.token)
+    const client = getOctokit(inputs.token)
 
     await client.repos.createDispatchEvent({
       owner: inputs.owner,
       repo: inputs.repo,
-      event_type: inputs.eventType, // eslint-disable-line @typescript-eslint/camelcase
-      client_payload: JSON.parse(inputs.clientPayload) // eslint-disable-line @typescript-eslint/camelcase
+      event_type: inputs.eventType,
+      client_payload: JSON.parse(inputs.clientPayload)
     })
 
     const repositoryDispatchedTime = new Date()
@@ -30,18 +30,18 @@ async function run(): Promise<void> {
     do {
       await wait(10 * 1000)
 
-      const response = await client.actions.listRepoWorkflowRuns({
+      const response = await client.actions.listWorkflowRunsForRepo({
         owner: inputs.owner,
         repo: inputs.repo,
         event: 'repository_dispatch'
       })
 
       startedWorkflowRun = response.data.workflow_runs
-        .filter(function(el) {
+        .filter(function (el) {
           const createdAtDate = new Date(el.created_at)
           return repositoryDispatchedTime <= createdAtDate
         })
-        .sort(function(a, b) {
+        .sort(function (a, b) {
           const aDate = new Date(a.created_at)
           const bDate = new Date(b.created_at)
           if (aDate > bDate) {
@@ -68,7 +68,7 @@ async function run(): Promise<void> {
       const {data} = await client.actions.getWorkflowRun({
         owner: inputs.owner,
         repo: inputs.repo,
-        run_id: startedWorkflowRun.id // eslint-disable-line @typescript-eslint/camelcase
+        run_id: startedWorkflowRun.id
       })
 
       if (data.status === 'completed') {
@@ -90,7 +90,7 @@ async function run(): Promise<void> {
 
     core.setOutput('conclusion', conclusion)
   } catch (error) {
-    core.setFailed(error.message)
+    core.setFailed((error as Error).message)
   }
 }
 
